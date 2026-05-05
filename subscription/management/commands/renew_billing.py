@@ -19,7 +19,6 @@ class Command(BaseCommand):
 
             with transaction.atomic():
 
-                # safety check (prevents duplicate billing)
                 already_billed = models.Payment.objects.filter(
                     subscription=sub,
                     status="success",
@@ -29,15 +28,16 @@ class Command(BaseCommand):
                 if already_billed:
                     continue
 
-                # 1. create payment
                 models.Payment.objects.create(
                     subscription=sub,
                     amount=sub.plan.price,
                     status="success"
                 )
 
-                # 2. renew subscription
-                sub.next_billing_date = today + timedelta(days=30)
+                if sub.plan.billing_cycle == "monthly":
+                    sub.next_billing_date = today + timedelta(days=30)
+                else:
+                    sub.next_billing_date = today + timedelta(days=365)                
                 sub.save()
 
         print("Update Billing Date Success")

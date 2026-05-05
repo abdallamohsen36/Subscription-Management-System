@@ -12,15 +12,6 @@ class UserProfilesSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Customer
         fields = ('id', 'email')
-
-    def create(self, validated_data):
-        merchant = self.context.get('merchant')
-
-        user = models.Customer.objects.create(
-            email=validated_data['email'],
-            merchant=merchant
-        )
-        return user
     
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -35,3 +26,11 @@ class SubscriptionListSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Subscription
         fields = '__all__'
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.Payment
+        fields = '__all__'
+        read_only_fields = ('status', 'created_at')

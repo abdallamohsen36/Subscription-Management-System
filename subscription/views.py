@@ -32,8 +32,15 @@ class PlanAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-class CreateUserAPIView(APIView):
+class UserAPIView(APIView):
     serializer_class = serializers.UserProfilesSerializer
+
+    def get(self, request):
+        merchant = models.Merchant.objects.get(user=request.user)
+        customers = models.Customer.objects.filter(merchant=merchant)
+        serializer = self.serializer_class(customers, many=True)
+        return Response(serializer.data)
+
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
@@ -59,25 +66,49 @@ class SubscribeUserAPIView(APIView):
         if serializer.is_valid():
             plan = serializer.validated_data['plan']
 
-            if plan.merchant != request.user.merchant:
+            if plan.merchant != merchant:
                 return Response({"error": "Invalid plan"}, status=400)
+            
+            if plan.billing_cycle == "monthly":
+                next_date = date.today() + timedelta(days=30)
+            else:
+                next_date = date.today() + timedelta(days=365)
             
             with transaction.atomic():
 
                 subscription = serializer.save(
-                    status="active",
-                    next_billing_date=date.today() + timedelta(days=30)
+                    status="pending",
                 )
-
-                models.Payment.objects.create(
+                payment = models.Payment.objects.create(
                     subscription=subscription,
                     amount=subscription.plan.price,
                     status="success"
                 )
+                subscription.status = "active"
+                subscription.next_billing_date = next_date
+                subscription.save()
+
             return Response({"message": "Subscribe User created successfully"})
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class CancelSubscriptionAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        merchant = models.Merchant.objects.get(user=request.user)
+        subscription = models.Subscription.objects.get(id=pk, user__merchant=merchant)
+
+        if subscription.user.merchant != merchant:
+            return Response({"error": "Not allowed"}, status=403)
+
+        subscription.status = "canceled"
+        subscription.end_date = date.today()
+        subscription.save()
+
+        return Response({"message": "Subscription canceled successfully"})
+    
 
 class SubscriptionListAPIView(APIView):
     serializer_class = serializers.SubscriptionListSerializer
@@ -87,3 +118,31 @@ class SubscriptionListAPIView(APIView):
         subscriptions = models.Subscription.objects.filter(user__merchant=merchant)
         serializer = self.serializer_class(subscriptions, many=True)
         return Response(serializer.data)
+    
+
+class PaymentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = serializers.PaymentSerializer
+
+    def get(self, request):
+        merchant = models.Merchant.objects.get(user=request.user)
+        payments = models.Payment.objects.filter(subscription__user__merchant=merchant)
+        serializer = self.serializer_class(payments, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        merchant = models.Merchant.objects.get(user=request.user)
+        subscription_id = request.data.get("subscription")
+        amount = request.data.get("amount")
+        subscription = models.Subscription.objects.get(id=subscription_id)
+
+        if subscription.user.merchant != merchant:
+            return Response({"error": "Not allowed"}, status=403)
+
+        payment = models.Payment.objects.create(
+            subscription=subscription,
+            amount=amount,
+            status="success"
+        )
+
+        return Response({"message": "Payment recorded successfully"})
