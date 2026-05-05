@@ -1,53 +1,51 @@
-Subscription Management System
+# Subscription Management System
 
 A simple SaaS-based subscription management system built with **Django** and **Django REST Framework**.
 
 ---
 
-Overview
+## Overview
 
 This project simulates a real-world SaaS platform where multiple merchants can manage their own customers, plans, and subscriptions with full data isolation.
 
 ---
 
-Features
+## Features
 
-* Multi-tenant architecture (data isolation per merchant)
-* Plan creation and management
-* Customer management
-* Subscription system
-* Automatic recurring billing
-* Payment tracking
-* Secure API endpoints
+- Multi-tenant architecture (data isolation per merchant)
+- Plan creation and management
+- Customer management
+- Subscription system
+- Automatic recurring billing
+- Payment tracking
+- Secure API endpoints
 
 ---
 
-Core Concepts
+## Core Concepts
 
-    Multi-Tenancy
+### Multi-Tenancy
 
 Each merchant:
-
-* Has their own plans
-* Manages their own customers
-* Can only access their own data
+- Has their own plans
+- Manages their own customers
+- Can only access their own data
 
 ---
 
-    Subscription Flow
+### Subscription Flow
 
 1. Merchant creates a plan
 2. Merchant creates a customer
-3. Customer subscribes to a plan
+3. Customer subscribes to a plan  
 4. System creates:
-
-   * Subscription
-   * Payment
+   - Subscription
+   - Payment  
 5. Subscription renews every 30 days
 
 ---
 
-    Recurring Billing
+### Recurring Billing
 
 A Django management command handles billing:
 
@@ -56,94 +54,87 @@ python manage.py renew_billing
 ```
 
 It:
-
-* Finds active subscriptions due for billing
-* Creates new payments
-* Updates `next_billing_date`
-
----
-
-Data Isolation
-
-* All models are linked to a merchant
-* APIs filter data using `request.user.merchant`
-* Users cannot access data from other merchants
-* Validation ensures users cannot subscribe to plans from another merchant
+- Finds active subscriptions due for billing
+- Creates new payments
+- Updates `next_billing_date`
 
 ---
 
-Models
+## Data Isolation
 
-* **Merchant**
-* **Customer**
-* **Plan**
-* **Subscription**
-* **Payment**
-
----
-
-API Endpoints
-
-Plans
-
-* `GET /api/plan/` → List plans
-* `POST /api/plan/` → Create plan
-
-Customers
-
-* `POST /api/user/` → Create customer
-
-Subscriptions
-
-* `POST /api/subscribe/` → Subscribe user
-* `GET /api/subscriptions/` → List subscriptions
+- All models are linked to a merchant
+- APIs filter data using `request.user.merchant`
+- Users cannot access data from other merchants
+- Validation ensures users cannot subscribe to plans from another merchant
 
 ---
 
-Questions
+## Models
 
-1. What happens if the recurring job runs twice?
+- Merchant
+- Customer
+- Plan
+- Subscription
+- Payment
 
-If the recurring billing job runs twice, it may create duplicate payments for the same subscription, resulting in double charging.
+---
+
+## API Endpoints
+
+### Plans
+- `GET /api/plan/`
+- `POST /api/plan/`
+
+### Customers
+- `POST /api/user/`
+
+### Subscriptions
+- `POST /api/subscribe/`
+- `GET /api/subscriptions/`
+
+---
+
+## Notes
+
+### What happens if the recurring job runs twice?
+
+If the recurring billing job runs twice, it may create duplicate payments.
 
 To prevent this:
-
-* The system checks if a payment already exists for the same subscription and day
-* `transaction.atomic()` ensures data consistency and prevents partial updates
-
----
-
-2. How do you prevent cross-merchant access?
-
-Cross-merchant access is prevented by:
-
-* Linking all models to a merchant
-* Filtering all queries using `request.user.merchant`
-* Validating that the selected plan belongs to the same merchant before subscription
+- The system checks if a payment already exists
+- `transaction.atomic()` is used to avoid partial updates
 
 ---
 
-3. What would you improve with more time?
+### How do you prevent cross-merchant access?
 
-* Use Celery for background job scheduling
-* Add retry mechanism for failed payments
-* Implement role-based access control
-* Add analytics dashboard (revenue, active users)
-* Integrate real payment gateway (Stripe)
-* Optimize database queries
+- All models are linked to a merchant
+- Queries are filtered using `request.user.merchant`
+- Validation ensures the plan belongs to the same merchant
 
 ---
 
-Tech Stack
+### What can be improved?
 
-* Python
-* Django
-* Django REST Framework
-* SQLite
+- Use Celery for background jobs
+- Add retry logic for failed payments
+- Add roles and permissions
+- Add analytics dashboard
+- Integrate a real payment gateway
+- Optimize queries
 
 ---
 
-How to Run
+## Tech Stack
+
+- Python
+- Django
+- Django REST Framework
+- SQLite
+
+---
+
+## How to Run
 
 ```bash
 git clone <your-repo-url>
@@ -157,7 +148,7 @@ python manage.py runserver
 
 ---
 
-Test Recurring Billing
+## Test Billing
 
 ```bash
 python manage.py renew_billing
@@ -165,6 +156,6 @@ python manage.py renew_billing
 
 ---
 
-Author
+## Author
 
 Abdullah Mohsen
