@@ -18,7 +18,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Subscription
-        fields = ('id', 'user', 'plan', 'status', 'next_billing_date')
+        fields = ('id', 'user', 'plan')
 
 
 
@@ -32,5 +32,5 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Payment
-        fields = '__all__'
+        fields = ('id', 'subscription', 'amount')
         read_only_fields = ('status', 'created_at')

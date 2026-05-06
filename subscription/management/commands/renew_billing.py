@@ -28,10 +28,17 @@ class Command(BaseCommand):
                 if already_billed:
                     continue
 
+                plan_cost = models.PlanCost.objects.filter(plan=sub.plan).first()
+
+                try:
+                    payment_status = "success"
+                except:
+                    payment_status = "failed"
+
                 models.Payment.objects.create(
                     subscription=sub,
-                    amount=sub.plan.price,
-                    status="success"
+                    amount=plan_cost.price,
+                    status=payment_status
                 )
 
                 if sub.plan.billing_cycle == "monthly":

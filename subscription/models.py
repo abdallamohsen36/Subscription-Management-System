@@ -32,9 +32,10 @@ class Subscription(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.CASCADE)
     plan = models.ForeignKey(Plan, on_delete=models.PROTECT)
     status = models.CharField(max_length=20, choices=[
+        ("pending", "Pending"),
         ("active", "Active"),
         ("canceled", "Canceled")
-    ], default="active")
+    ], default="Pending")
     start_date = models.DateTimeField(auto_now_add=True)
     end_date = models.DateTimeField(null=True, blank=True)
     next_billing_date = models.DateTimeField()

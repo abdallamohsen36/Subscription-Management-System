@@ -78,14 +78,16 @@ class SubscribeUserAPIView(APIView):
 
                 subscription = serializer.save(
                     status="pending",
+                    next_billing_date=next_date
                 )
+
+                plan_cost = models.PlanCost.objects.get(plan=subscription.plan)
                 payment = models.Payment.objects.create(
                     subscription=subscription,
-                    amount=subscription.plan.price,
+                    amount=plan_cost.price,
                     status="success"
                 )
                 subscription.status = "active"
-                subscription.next_billing_date = next_date
                 subscription.save()
 
             return Response({"message": "Subscribe User created successfully"})
@@ -114,7 +116,7 @@ class SubscriptionListAPIView(APIView):
     serializer_class = serializers.SubscriptionListSerializer
 
     def get(self, request):
-        merchant = request.user.merchant
+        merchant = models.Merchant.objects.get(user=request.user)
         subscriptions = models.Subscription.objects.filter(user__merchant=merchant)
         serializer = self.serializer_class(subscriptions, many=True)
         return Response(serializer.data)
@@ -133,15 +135,16 @@ class PaymentAPIView(APIView):
     def post(self, request):
         merchant = models.Merchant.objects.get(user=request.user)
         subscription_id = request.data.get("subscription")
-        amount = request.data.get("amount")
         subscription = models.Subscription.objects.get(id=subscription_id)
 
         if subscription.user.merchant != merchant:
             return Response({"error": "Not allowed"}, status=403)
+        
+        plan_cost = models.PlanCost.objects.get(plan=subscription.plan)
 
         payment = models.Payment.objects.create(
             subscription=subscription,
-            amount=amount,
+            amount=plan_cost.price,
             status="success"
         )
 
