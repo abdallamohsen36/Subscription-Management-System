@@ -6,7 +6,7 @@ A simple SaaS-based subscription management system built with **Django** and **D
 
 ## Overview
 
-This project simulates a real-world SaaS platform where multiple merchants can manage their own customers, plans, and subscriptions with full data isolation.
+This project simulates a real-world SaaS platform where multiple merchants can manage their own customers, plans, subscriptions, and payments with full data isolation and recurring billing support.
 
 ---
 
@@ -16,9 +16,10 @@ This project simulates a real-world SaaS platform where multiple merchants can m
 - Plan creation and management
 - Customer management
 - Subscription system
-- Automatic recurring billing
-- Payment tracking
-- Secure API endpoints
+- Automatic recurring billing (Django management command)
+- Payment tracking system
+- Plan-based pricing using `PlanCost`
+- Secure API endpoints with ownership validation
 
 ---
 
@@ -29,19 +30,22 @@ This project simulates a real-world SaaS platform where multiple merchants can m
 Each merchant:
 - Has their own plans
 - Manages their own customers
-- Can only access their own data
+- Has isolated subscriptions and payments
+- Cannot access other merchants' data
 
 ---
 
 ### Subscription Flow
 
-1. Merchant creates a plan
-2. Merchant creates a customer
-3. Customer subscribes to a plan  
-4. System creates:
+1. Merchant creates a plan  
+2. Merchant sets plan pricing (`PlanCost`)  
+3. Merchant creates a customer  
+4. Customer subscribes to a plan  
+5. System creates:
    - Subscription
    - Payment  
-5. Subscription renews every 30 days
+6. Subscription becomes active after successful payment  
+7. Next billing date is calculated automatically  
 
 ---
 
@@ -55,8 +59,10 @@ python manage.py renew_billing
 
 It:
 - Finds active subscriptions due for billing
-- Creates new payments
+- Prevents duplicate payments (basic idempotency check)
+- Creates new payment records
 - Updates `next_billing_date`
+- Supports monthly/yearly cycles
 
 ---
 
@@ -65,7 +71,10 @@ It:
 - All models are linked to a merchant
 - APIs filter data using `request.user.merchant`
 - Users cannot access data from other merchants
-- Validation ensures users cannot subscribe to plans from another merchant
+- Validation ensures:
+  - Plan belongs to same merchant
+  - Subscription belongs to same merchant
+  - Payment belongs to same merchant
 
 ---
 
@@ -74,6 +83,7 @@ It:
 - Merchant
 - Customer
 - Plan
+- PlanCost
 - Subscription
 - Payment
 
@@ -82,46 +92,59 @@ It:
 ## API Endpoints
 
 ### Plans
-- `GET /api/plan/`
-- `POST /api/plan/`
+- `GET /api/plans/`
+- `POST /api/plans/`
 
 ### Customers
-- `POST /api/user/`
+- `GET /api/users/`
+- `POST /api/users/`
 
 ### Subscriptions
 - `POST /api/subscribe/`
 - `GET /api/subscriptions/`
+- `POST /api/cancel/<id>/`
+
+### Payments
+- `GET /api/payments/`
+- `POST /api/payments/`
 
 ---
 
 ## Notes
 
-### What happens if the recurring job runs twice?
+### Plan Pricing System
 
-If the recurring billing job runs twice, it may create duplicate payments.
+Each plan has a `PlanCost` which defines:
+- price
+- currency
 
-To prevent this:
-- The system checks if a payment already exists
-- `transaction.atomic()` is used to avoid partial updates
-
----
-
-### How do you prevent cross-merchant access?
-
-- All models are linked to a merchant
-- Queries are filtered using `request.user.merchant`
-- Validation ensures the plan belongs to the same merchant
+All payments use `PlanCost` as the single source of truth for pricing.
 
 ---
 
-### What can be improved?
+### Recurring Billing Safety
+
+If the billing job runs twice:
+- Duplicate payments are prevented using basic checks
+- Transaction atomic blocks ensure consistency
+
+---
+
+### Cross-Merchant Security
+
+- All models are tied to a merchant
+- Queries are always filtered by `request.user.merchant`
+- Extra validation is applied during creation
+
+---
+
+### Possible Improvements
 
 - Use Celery for background jobs
 - Add retry logic for failed payments
-- Add roles and permissions
-- Add analytics dashboard
-- Integrate a real payment gateway
-- Optimize queries
+- Add role-based access control
+- Integrate real payment gateway (Stripe / Paymob)
+- Improve idempotency with unique billing keys
 
 ---
 
