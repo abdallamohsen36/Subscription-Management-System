@@ -14,23 +14,28 @@ from subscription import serializers, models
 class PlanAPIView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = serializers.PlanSerializer
-    
     def get(self, request):
-        merchant = models.Merchant.objects.get(user=request.user)
-        plans = models.Plan.objects.filter(merchant=merchant)
+        print("USER:", request.user.username)
+        print("MERCHANT:", request.user.merchant.id)
+
+        plans = models.Plan.objects.filter(merchant=request.user.merchant)
         serializer = self.serializer_class(plans, many=True)
         return Response(serializer.data)
-
     def post(self, request):
+        merchant = request.user.merchant
+
         serializer = self.serializer_class(data=request.data)
 
         if serializer.is_valid():
-            merchant = models.Merchant.objects.get(user=request.user)
-            serializer.save(merchant=merchant)
+            plan = serializer.save(merchant=merchant)
+            models.PlanCost.objects.create(
+                plan=plan,
+                price=request.data.get("price", 100),  # default لو مش مبعوت
+                currency=request.data.get("currency", "EGP")
+            )
             return Response({"message": "Plan created successfully"})
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+        return Response(serializer.errors, status=400)
 
 class UserAPIView(APIView):
     serializer_class = serializers.UserProfilesSerializer
@@ -139,7 +144,7 @@ class PaymentAPIView(APIView):
 
         if subscription.user.merchant != merchant:
             return Response({"error": "Not allowed"}, status=403)
-        
+            
         plan_cost = models.PlanCost.objects.get(plan=subscription.plan)
 
         payment = models.Payment.objects.create(

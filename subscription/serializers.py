@@ -11,7 +11,7 @@ class UserProfilesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Customer
-        fields = ('id', 'email')
+        fields = '__all__'
     
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -33,4 +33,4 @@ class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Payment
         fields = ('id', 'subscription', 'amount')
-        read_only_fields = ('status', 'created_at')
+        read_only_fields = ('status', 'created_at', 'amount')
