@@ -5,14 +5,15 @@ class PlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Plan
         fields = '__all__'
+        read_only_fields = ["merchant"]
 
 
 class UserProfilesSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = models.Customer
+        model = models.User
         fields = '__all__'
-    
+        read_only_fields = ["merchant"]
 
 class SubscriptionSerializer(serializers.ModelSerializer):
 
