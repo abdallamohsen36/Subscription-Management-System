@@ -82,14 +82,9 @@ class SubscribeUserAPIView(APIView):
         serializer = self.serializer_class(data=request.data)        
 
         if serializer.is_valid():
-            plan = get_plan_for_merchant(
-                plan_id=serializer.validated_data["plan"],
-                merchant=request.user.merchant
-            )
-
             subscription = create_subscription(
                 user=request.user,
-                plan=plan
+                plan=serializer.validated_data["plan"]
             )          
             return success_response(
                 message="Subscription created successfully"

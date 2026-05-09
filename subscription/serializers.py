@@ -9,14 +9,12 @@ class PlanSerializer(serializers.ModelSerializer):
 
 
 class UserProfilesSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = models.User
         fields = '__all__'
         read_only_fields = ["merchant"]
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = models.Subscription
         fields = ('id', 'user', 'plan')

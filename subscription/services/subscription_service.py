@@ -7,7 +7,7 @@ from subscription.services.tenant_service import get_plan_for_merchant, get_plan
 
 
 def create_subscription(*, user, plan):
-
+    user = models.User.objects.get(id=user.id)
     merchant = user.merchant
 
     plan = get_plan_for_merchant(
